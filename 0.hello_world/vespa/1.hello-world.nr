@@ -35,7 +35,7 @@ product_schema = Schema(
 #H1 deploy
 # bundle the schema into an application package and deploy it to a new container
 app_package = ApplicationPackage(name="lexicalsearch", schema=[product_schema])
-vespa_docker = VespaDocker(port=8080, cfgsrv_port=29071)
+vespa_docker = VespaDocker(port=8080, cfgsrv_port=19071)
 # this will take up to a minute
 app = vespa_docker.deploy(application_package=app_package)
 print(f"✅ Deployed 'product' schema to Vespa at: {app.url}:{app.port}")
