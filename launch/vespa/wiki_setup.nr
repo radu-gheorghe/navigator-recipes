@@ -26,7 +26,7 @@ vespa deploy
 #%%bash
 #H1 Feed sample data
 # TODO: feed with pyvespa? crawl data in this recipe?
-vespa feed --progress 3 ~/Documents/navigator/Wikipedia-Fragments-v6.ndjson
+vespa feed ~/Documents/navigator/Wikipedia-Fragments-v6.ndjson
 #%%vespa
 #H1 Run a Select All query
 # TODO: set up the Vespa Cloud endpoint
