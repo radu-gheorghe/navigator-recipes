@@ -1,0 +1,116 @@
+schema fragment {
+  document fragment {
+    field id type string {
+      # these are the string fields we know and love from Solr
+      indexing: summary | attribute
+    }
+    field article_url_s type string {
+      indexing: summary | attribute
+    }
+    field article_title_s type string {
+      indexing: summary | attribute
+    }
+    field article_type_s type string {
+      indexing: summary | attribute
+    }
+    field heading_4_s type string {
+      indexing: summary | attribute
+    }
+    field heading_hierarchy_hp type string {
+      # this is a text field - normalized and tokenized (i.e. analyzed)
+      # I didn't get to fiddle with tokenizing just yet, so I'm indexing with default analysis
+      indexing: summary | index
+    }
+    field heading_level_s type string {
+      indexing: summary | attribute
+    }
+    field fragment_type_s type string {
+      indexing: summary | attribute
+    }
+    field fragment_position_sequential_i type int {
+      # integer, like in Solr
+      indexing: summary | attribute
+    }
+    field fragment_position_structural_s type string {
+      indexing: summary | attribute
+    }
+    field content_t type string {
+      # this should work similar to how it does in Solr
+      indexing: summary | index
+    }
+    field content_normalized_t type string {
+      indexing: summary | index
+    }
+    field count_content_char_i type int {
+      indexing: summary | attribute
+    }
+    field count_content_words_i type int {
+      indexing: summary | attribute
+    }
+    field count_content_sentences_i type int {
+      indexing: summary | attribute
+    }
+    field entry_created_dt type string {
+      # whoops! we don't have date fields in Vespa. We need to manually map this string to a long, see below
+      indexing: summary | attribute
+    }
+
+    field see_also_ss type array<string> {
+      indexing: summary | attribute
+    }
+
+    field embedding_type_s type string {
+      indexing: summary | attribute
+    }
+    field embedding_v type tensor<float>(x[192]) {
+        # vector of 192 dimensions. Maybe we could use bfloat16 to be faster? Not to mention byte quantizing and other wizardry
+        
+        #  we need attribute for ranking (?) and we need "index" for hsnw. We may want to add summary for debugging.
+        indexing: attribute | index
+        
+        attribute {
+            # cosine similarity: https://docs.vespa.ai/en/reference/schema-reference.html#angular
+            # there are N other ways to compute the distance, this seems to be the most naive
+            distance-metric: angular
+        }
+
+        index {
+            hnsw {
+                # Solr's hnswMaxConnections. "M" from the paper
+                max-links-per-node: 10
+                # Solr's hnswBeamWidth. efConstruction from the paper. I hate renaming parameters. Elasticsearch did it right once again, # calling it ef_construction
+                neighbors-to-explore-at-insert: 10
+            }
+        }
+    }
+  }
+
+  # "synthetic" field created from original document fields. note how this is outside the "source" document
+  field entry_created_long type long {
+    # this is effectively a copyField that parses the string into a long, for indexing. Like Solr does under the hood
+    indexing: input entry_created_dt | to_epoch_second | attribute | summary
+  }
+
+  fieldset default {
+    # the fields to return by default
+    fields: id, article_url_s, article_title_s, article_type_s, heading_4_s, heading_hierarchy_hp, heading_level_s, fragment_type_s, fragment_position_sequential_i, fragment_position_structural_s, content_t, content_normalized_t, count_content_char_i, count_content_words_i, count_content_sentences_i, entry_created_dt, entry_created_long, embedding_type_s
+  }
+
+  rank-profile default {
+    # the scoring algo to use by default. This is where the relevance magic happens
+    first-phase {
+      expression: nativeRank()
+    }
+  }
+
+  rank-profile semantic_search inherits default {
+    inputs {
+        # the type needs to match our document's (192 dimensions, float)
+        query(q_vector) tensor<float>(x[192])
+    }
+    first-phase {
+        # reference our embedding field
+        expression: closeness(field, embedding_v)
+    }
+  }
+}
