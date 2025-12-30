@@ -15,18 +15,18 @@ vespa config get
 #%%bash
 #H1 Deploy the app
 # application package should be here
-cd gits/navigator-recipes/launch/vespa/wiki_app
+cd wiki_app
 pwd
 #%%bash
 #H2 Generate mTLS certs
 vespa auth cert -f
 #%%bash
 #H2 Deploy
-vespa deploy
+vespa deploy --wait 900
 #%%bash
 #H1 Feed sample data
-# TODO: feed with pyvespa? crawl data in this recipe?
-vespa feed ~/Documents/navigator/Wikipedia-Fragments-v6.ndjson
+# TODO make sure the data is there
+vespa feed --progress 3 ~/Documents/navigator/Wikipedia-Fragments-v6.ndjson
 #%%vespa
 #H1 Run a Select All query
 # TODO: set up the Vespa Cloud endpoint
