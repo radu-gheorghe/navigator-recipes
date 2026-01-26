@@ -1,5 +1,5 @@
 #%%markdown
-![Visual of what we're doing](TODO)
+![Visual of what we're doing](https://github.com/radu-gheorghe/navigator-recipes/blob/main/launch/vespa/setup-cloud.png?raw=true)
 #%%bash
 #H1 Point Vespa CLI to Vespa Cloud
 vespa config set target cloud
